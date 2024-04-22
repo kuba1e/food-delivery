@@ -10,7 +10,6 @@ import {
 @InputType()
 export class RegisterDto {
   @Field()
-  @IsEmail()
   @IsNotEmpty({ message: 'Name is required.' })
   @IsString({ message: 'Name must to be one string.' })
   name: string;
@@ -33,6 +32,17 @@ export class RegisterDto {
   @Field()
   @IsNotEmpty({ message: 'Address is required.' })
   address: string;
+}
+
+@InputType()
+export class ActivationDto {
+  @Field()
+  @IsNotEmpty({ message: 'Activation token is required.' })
+  activationToken: string;
+
+  @Field()
+  @IsNotEmpty({ message: 'Activation code is required' })
+  activationCode: string;
 }
 
 @InputType()
