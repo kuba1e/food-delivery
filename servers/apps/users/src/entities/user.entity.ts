@@ -30,8 +30,8 @@ export class User {
   @Field()
   phone_number: number;
 
-  @Field()
-  address: string;
+  @Field({ nullable: true })
+  address?: string | null;
 
   @Field()
   password: string;

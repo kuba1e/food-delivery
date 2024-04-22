@@ -6,6 +6,7 @@ import { PrismaService } from '../../../prisma/PrismaService';
 import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from './email/email.service';
+import { TokenSender } from './utils/sendToken';
 
 interface UserData {
   name: string;
@@ -65,11 +66,7 @@ export class UsersService {
       activationCode,
     });
 
-    const createdUser = await this.prismaService.user.create({
-      data: user,
-    });
-
-    return { user: createdUser, response };
+    return { activation_token: activationToken.token, response };
   }
 
   async createActivationToken(user: UserData) {
@@ -86,7 +83,7 @@ export class UsersService {
     return { token, activationCode };
   }
 
-  async activateUser(activationDto: ActivationDto) {
+  async activateUser(activationDto: ActivationDto, response: Response) {
     const { activationCode, activationToken } = activationDto;
 
     const newUser: { user: UserData; activationCode: string } =
@@ -97,17 +94,61 @@ export class UsersService {
     if (newUser.activationCode !== activationCode) {
       throw new BadRequestException('Activation code is invalid!');
     }
+
+    const { name, email, password, phone_number } = newUser.user;
+
+    const existUser = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+
+    if (existUser) {
+      throw new BadRequestException('User with this email already exist!');
+    }
+
+    const user = await this.prismaService.user.create({
+      data: {
+        name,
+        email,
+        password,
+        phone_number,
+      },
+    });
+
+    return { user, response };
   }
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    const user = {
-      email,
-      password,
-    };
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email,
+      },
+    });
 
-    return user;
+    if (!user) {
+      throw new BadRequestException('User with this email does not exist!');
+    }
+
+    const passwordMatched = await this.comparePassword(password, user.password);
+
+    if (passwordMatched) {
+      const tokenSender = new TokenSender(this.configService, this.jwtService);
+      return tokenSender.sendToken(user);
+    } else {
+      return {
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        error: {
+          message: 'Invalid email or password',
+        },
+      };
+    }
+  }
+
+  async comparePassword(passwordToCompare: string, hashedPassword: string) {
+    return await bcrypt.compare(passwordToCompare, hashedPassword);
   }
 
   async getUsers() {
