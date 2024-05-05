@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { GraphQLModule } from '@nestjs/graphql';
 import {
@@ -9,8 +8,8 @@ import {
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../../prisma/PrismaService';
-import { UserResolver } from './user.resolver';
 import { EmailModule } from './email/email.module';
+import { UsersResolver } from './user.resolver';
 
 @Module({
   imports: [
@@ -25,13 +24,13 @@ import { EmailModule } from './email/email.module';
     }),
     EmailModule,
   ],
-  controllers: [UsersController],
+  controllers: [],
   providers: [
     UsersService,
     ConfigService,
     JwtService,
     PrismaService,
-    UserResolver,
+    UsersResolver,
   ],
 })
 export class UsersModule {}
